@@ -15,37 +15,38 @@ contract SimpleNFT is ERC721, Ownable, ISimpleNFT {
     bool public isSaleActive = false;
     uint256 public maxSupply = 5000;
     uint256 public maxPerWallet = 1;
-
-    uint256 public price = 0.12 ether;
-
-    string private _baseTokenURI;
+    uint256 public mintPrice = 0.12 ether;
 
     // Wallet/contract allowed to withdraw funds
     address private _withdrawer;
+
+    string private _baseTokenURI;
 
     constructor(
         string memory name,
         string memory symbol,
         string memory baseURI,
-        address withdrawer
+        address withdrawer,
+        uint256 newMaxSupply
     ) ERC721(name, symbol) {
         setBaseURI(baseURI);
         setWithdrawer(withdrawer);
+        maxSupply = newMaxSupply;
     }
 
-    function saleOne() external payable {
+    /**
+     * @dev To mint a NFT you need to pay gas. You can only mint maxPerWallet.
+     * This is only available when sale is active
+     */
+    function saleOne() external payable returns (uint256) {
         if (!isSaleActive) revert SaleNotActive();
-        if (balanceOf(msg.sender) + 1 > maxPerWallet) revert MaximumPerWallet(maxPerWallet);
+        if (balanceOf(msg.sender) >= maxPerWallet) revert MaximumPerWallet(maxPerWallet);
         if (_tokenIdCounter.current() >= maxSupply) revert ExceedSupplyLimit();
-        if (msg.value < price) revert InvalidEthAmount();
+        if (msg.value < mintPrice) revert InvalidEthAmount();
 
-        _mintOne(msg.sender);
-    }
-
-    function _mintOne(address _to) internal returns (uint256) {
         _tokenIdCounter.increment();
         uint256 newTokenId = _tokenIdCounter.current();
-        _safeMint(_to, newTokenId);
+        _safeMint(msg.sender, newTokenId);
         return newTokenId;
     }
 
@@ -66,25 +67,30 @@ contract SimpleNFT is ERC721, Ownable, ISimpleNFT {
     }
 
     function setMintPrice(uint256 newPrice) external onlyOwner {
-        price = newPrice;
+        mintPrice = newPrice;
     }
 
     function setMaxPerWallet(uint256 newMaxPerWallet) external onlyOwner {
         maxPerWallet = newMaxPerWallet;
     }
 
-    function setMaxSupply(uint256 newMaxSupply) external onlyOwner {
-        maxSupply = newMaxSupply;
-    }
-
     function toggleSale() external onlyOwner {
         isSaleActive = !isSaleActive;
     }
 
+    /**
+     * @dev Set a withdrawer address to transfer funds.. It can be a wallet or a contract
+     */
     function setWithdrawer(address withdrawer) public onlyOwner {
         _withdrawer = withdrawer;
     }
 
+    /**
+     * @dev method to transfer all collected founds to withdrawer address.
+     *
+     * This methods can anly be called by this contract owner but will transfer founds to the configured withdrawer.
+     * Doing this way, we can transfer funds directly to another contract for latter use, avoids two transfers
+     */
     function withdrawAll() external payable onlyOwner {
         uint256 balance = address(this).balance;
         if (balance <= 0) revert NoBalanceAvailable();

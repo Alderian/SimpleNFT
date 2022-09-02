@@ -16,7 +16,7 @@ describe("SimpleNFT contract", function () {
     async function deploySimpleNFT() {
         const [owner, withdrawer, addr1, addr2, addr3] = await ethers.getSigners()
         const SimpleNFT = await ethers.getContractFactory("SimpleNFT")
-        const simpleNFT = await SimpleNFT.deploy(name, symbol, baseURI, withdrawer.address)
+        const simpleNFT = await SimpleNFT.deploy(name, symbol, baseURI, withdrawer.address, 10)
         const maxSupply = await simpleNFT.maxSupply()
 
         return { simpleNFT, owner, withdrawer, maxSupply, addr1, addr2, addr3 }
@@ -34,7 +34,7 @@ describe("SimpleNFT contract", function () {
             expect(await simpleNFT.symbol()).to.equal(symbol)
             expect(await simpleNFT.totalSupply()).to.equal(0)
             expect(await simpleNFT.availableSupply()).to.equal(maxSupply)
-            expect(await simpleNFT.price()).to.equal(mintPrice)
+            expect(await simpleNFT.mintPrice()).to.equal(mintPrice)
             expect(await simpleNFT.isSaleActive()).to.equal(false)
         })
     })
@@ -117,18 +117,18 @@ describe("SimpleNFT contract", function () {
         })
     })
 
-    describe("Change mint price", function () {
+    describe("Change mint mintPrice", function () {
         const mintPrice1 = ethers.utils.parseEther("0.01")
 
-        it("Should check only owner can change mint price", async function () {
+        it("Should check only owner can change mint mintPrice", async function () {
             await expect(simpleNFT.connect(addr1).setMintPrice(mintPrice1)).to.be.revertedWith(
                 "Ownable: caller is not the owner"
             )
         })
 
-        it("Should change mint price", async function () {
+        it("Should change mint mintPrice", async function () {
             await simpleNFT.connect(owner).setMintPrice(mintPrice1)
-            expect(await simpleNFT.price()).to.eq(mintPrice1)
+            expect(await simpleNFT.mintPrice()).to.eq(mintPrice1)
         })
     })
 
@@ -142,17 +142,6 @@ describe("SimpleNFT contract", function () {
         it("Should change max mint per wallet", async function () {
             await simpleNFT.connect(owner).setMaxPerWallet(5)
             expect(await simpleNFT.maxPerWallet()).to.eq(5)
-        })
-
-        it("Should check only owner can change max supply", async function () {
-            await expect(simpleNFT.connect(addr1).setMaxSupply(10)).to.be.revertedWith(
-                "Ownable: caller is not the owner"
-            )
-        })
-
-        it("Should change max supplt", async function () {
-            await simpleNFT.connect(owner).setMaxSupply(10)
-            expect(await simpleNFT.maxSupply()).to.eq(10)
         })
 
         it("should verify max supply when selling all", async function () {
