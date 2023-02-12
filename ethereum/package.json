@@ -10,13 +10,13 @@
   "license": "ISC",
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^1.0.3",
-    "@nomicfoundation/hardhat-toolbox": "^1.0.2",
+    "@nomicfoundation/hardhat-toolbox": "^2.0.1",
     "@nomiclabs/hardhat-ethers": "^2.1.1",
     "@nomiclabs/hardhat-etherscan": "^3.1.0",
     "chai": "^4.3.6",
     "hardhat": "^2.10.2",
     "hardhat-gas-reporter": "^1.0.8",
-    "solidity-coverage": "^0.7.21"
+    "solidity-coverage": "^0.8.2"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^4.7.3",
