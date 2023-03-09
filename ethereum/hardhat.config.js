@@ -10,10 +10,19 @@ const COINMARKETCAP_API_KEY = process.env.COINMARKETCAP_API_KEY || ""
 const GOERLI_RPC_URL =
     process.env.GOERLI_RPC_URL || "https://eth-goerli.g.alchemy.com/v2/your-api-key"
 const PRIVATE_KEY = process.env.PRIVATE_KEY || ""
+const MNEMONIC = process.env.MNEMONIC || ""
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY || ""
 
 module.exports = {
-    solidity: "0.8.9",
+    solidity: {
+        version: "0.8.9",
+        settings: {
+            optimizer: {
+                enabled: false,
+                runs: 200,
+            },
+        },
+    },
     defaultNetwork: "hardhat",
     networks: {
         hardhat: {
@@ -22,7 +31,9 @@ module.exports = {
         },
         goerli: {
             url: GOERLI_RPC_URL,
-            accounts: [PRIVATE_KEY],
+            accounts: {
+                mnemonic: MNEMONIC,
+            },
             blockConfirmations: 6,
             chainId: 5,
         },
