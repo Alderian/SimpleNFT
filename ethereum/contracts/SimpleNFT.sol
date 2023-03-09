@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
-
-pragma solidity 0.8.9;
+pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
@@ -23,15 +22,18 @@ contract SimpleNFT is ERC721, Ownable, ISimpleNFT {
     string private _baseTokenURI;
 
     constructor(
-        string memory name,
-        string memory symbol,
+        string memory _name,
+        string memory _symbol,
         string memory baseURI,
-        address withdrawer,
-        uint256 newMaxSupply
-    ) ERC721(name, symbol) {
-        setBaseURI(baseURI);
-        setWithdrawer(withdrawer);
-        maxSupply = newMaxSupply;
+        address _newWithdrawer,
+        uint256 _maxSupply
+    ) ERC721(_name, _symbol) {
+        _baseTokenURI = baseURI;
+        _withdrawer = _newWithdrawer;
+        maxSupply = _maxSupply;
+
+        // nextTokenId is initialized to 1, since starting at 0 leads to higher gas cost for the first minter
+        _tokenIdCounter.increment();
     }
 
     /**
@@ -41,24 +43,28 @@ contract SimpleNFT is ERC721, Ownable, ISimpleNFT {
     function saleOne() external payable returns (uint256) {
         if (!isSaleActive) revert SaleNotActive();
         if (balanceOf(msg.sender) >= maxPerWallet) revert MaximumPerWallet(maxPerWallet);
-        if (_tokenIdCounter.current() >= maxSupply) revert ExceedSupplyLimit();
+        if (_tokenIdCounter.current() > maxSupply) revert ExceedSupplyLimit();
         if (msg.value < mintPrice) revert InvalidEthAmount();
 
-        _tokenIdCounter.increment();
         uint256 newTokenId = _tokenIdCounter.current();
+        _tokenIdCounter.increment();
         _safeMint(msg.sender, newTokenId);
         return newTokenId;
     }
 
     function availableSupply() external view returns (uint256) {
-        return maxSupply - _tokenIdCounter.current();
+        return maxSupply - totalSupply();
     }
 
-    function totalSupply() external view returns (uint256) {
-        return _tokenIdCounter.current();
+    /**
+        @dev Returns the total tokens minted so far.
+        1 is always subtracted from the Counter since it tracks the next available tokenId.
+     */
+    function totalSupply() public view returns (uint256) {
+        return _tokenIdCounter.current() - 1;
     }
 
-    function setBaseURI(string memory baseURI) public onlyOwner {
+    function setBaseURI(string memory baseURI) external onlyOwner {
         _baseTokenURI = baseURI;
     }
 
