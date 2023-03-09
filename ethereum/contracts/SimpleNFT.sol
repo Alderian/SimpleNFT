@@ -52,6 +52,67 @@ contract SimpleNFT is ERC721, Ownable, ISimpleNFT {
         return newTokenId;
     }
 
+    /**
+     * @dev To mint a NFT you need to pay gas. You can only mint maxPerWallet.
+     * Only control maxSupply. We asume owner knows what is he/she doing
+     */
+    function freeMintOne(address _to) external payable returns (uint256) {
+        if (_tokenIdCounter.current() > maxSupply) revert ExceedSupplyLimit();
+
+        uint256 newTokenId = _tokenIdCounter.current();
+        _tokenIdCounter.increment();
+        _safeMint(_to, newTokenId);
+        return newTokenId;
+    }
+
+    /**
+     * @dev Permits owner to mint nfts to any address without paying
+     * Only control maxSupply. We asume owner knows what is he/she doing
+     */
+    function freeMint(address _to, uint256 _amount) external onlyOwner returns (uint256) {
+        if (_tokenIdCounter.current() > maxSupply - _amount) revert ExceedSupplyLimit();
+
+        uint256 newTokenId;
+
+        for (uint i = 0; i < _amount; i++) {
+            newTokenId = _tokenIdCounter.current();
+            _tokenIdCounter.increment();
+            _safeMint(_to, newTokenId);
+        }
+
+        // Return last id
+        return newTokenId;
+    }
+
+    /**
+     * @dev Permits owner to mint any number of nfts to any number of address without paying
+     * Only control maxSupply. We asume owner knows what is he/she doing
+     *
+     * You should pass an array of addresses and an array of amounts,
+     * where _tos[0] corresponds to _amounts[0], and _tos[1] corresponds to _amounts[1].. etc
+     */
+    function freeBulkMint(
+        address[] calldata _tos,
+        uint256[] calldata _amounts
+    ) external onlyOwner returns (uint256) {
+        uint256 newTokenId;
+
+        for (uint toId = 0; toId < _tos.length; toId++) {
+            // Its easier to test this here
+            // If we are overflowing with the minting for this wallet, revert all
+            if (_tokenIdCounter.current() > maxSupply - _amounts[toId]) revert ExceedSupplyLimit();
+
+            for (uint i = 0; i < _amounts[toId]; i++) {
+                newTokenId = _tokenIdCounter.current();
+                _tokenIdCounter.increment();
+                _safeMint(_tos[toId], newTokenId);
+            }
+        }
+
+        // Return last id
+        return newTokenId;
+    }
+
     function availableSupply() external view returns (uint256) {
         return maxSupply - totalSupply();
     }
